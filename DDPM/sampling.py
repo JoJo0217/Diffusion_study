@@ -1,6 +1,7 @@
 import os
 import torch
-from torchvision.utils import save_image
+import numpy as np
+import matplotlib.pyplot as plt
 
 
 @torch.no_grad()
@@ -24,10 +25,7 @@ def sample(model, img_size, alphas, alphas_cumprod, betas, T, device, batch_size
 
         x = (1 / torch.sqrt(alphas[t])) * (x - ((1 - alphas[t]) / torch.sqrt(1 -
                                                                              alphas_cumprod[t])) * noise_pred) + torch.sqrt(beta_t) * noise
-        if t == 0 or t == 250 or t == 500 or t == 750:
-            noise_to_x.append(x)
-    noise_to_x = torch.stack(noise_to_x, dim=0)
-    return noise_to_x
+    return x
 
 
 def main():
@@ -35,19 +33,22 @@ def main():
     T = 1000
     beta_start = 1e-4
     beta_end = 0.02
-
+    img_save_dir = 'generated_images'
+    model_dir = 'ddpm.pth'
     betas = torch.linspace(beta_start, beta_end, T).to(device)
     alphas = 1 - betas
     alphas_cumprod = torch.cumprod(alphas, dim=0).to(device)
 
-    model = torch.load("ddpm.pth")
+    model = torch.load(model_dir)
 
     sample_images = sample(model, 28, alphas, alphas_cumprod, betas, T, device, batch_size=8)
-    os.makedirs('generated_images', exist_ok=True)
+    os.makedirs(img_save_dir, exist_ok=True)
+    sample_images = sample_images.cpu().numpy()
     sample_images = (sample_images + 1) / 2  # [-1,1] -> [0,1]
-    for time_step, images in enumerate(reversed(sample_images)):
-        for idx, img in enumerate(images):
-            save_image(img, f'generated_images/{time_step*25}_{idx}.png')
+    for idx, img in enumerate(sample_images):
+        img = np.squeeze(img)
+        file_path = os.path.join(img_save_dir, f"{idx}.png")
+        plt.imsave(file_path, img, cmap='gray')
 
 
 if __name__ == '__main__':
