@@ -7,7 +7,7 @@ import torch.optim as optim
 from torch.utils.data import DataLoader
 from torchvision import datasets, transforms
 from tqdm import tqdm
-from model import MyUNet
+from model import MyUNet, DiT
 from sampling import sample
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -19,7 +19,9 @@ model_dir = 'ddpm.pth'
 img_save_dir = 'generated_images'
 
 
-model = MyUNet().to(device)
+# model = MyUNet().to(device)
+model = DiT().to(device)
+
 
 T = 1000
 beta_start = 1e-4
